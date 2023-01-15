@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios, { all } from 'axios';
+import axios from 'axios';
 import { useParams } from "react-router-dom";
 import TableMain from "../Home/tableMain";
 
@@ -61,10 +61,6 @@ const Playoffs = () => {
     const secondary_headers = [
         [
             {
-                text: 'Slot',
-                colSpan: 2
-            },
-            {
                 text: 'Player',
                 colSpan: 5
             },
@@ -103,7 +99,7 @@ const Playoffs = () => {
                             },
                             {
                                 text: getPlayerScore(scoring[player_id], league.league.scoring_settings),
-                                colSpan: 4
+                                colSpan: 2
                             }
                         ]
                     }
@@ -122,11 +118,35 @@ const Playoffs = () => {
                     }
                 ],
                 secondary_table: (
-                    <TableMain
-                        type={'secondary'}
-                        headers={secondary_headers}
-                        body={secondary_body}
-                    />
+                    <>
+                        <div className="secondary nav">
+                            <button>
+                                Week 18
+                            </button>
+                            <button
+                                className={'active click'}
+                            >
+                                WC
+                            </button>
+                            <button>
+                                Div
+                            </button>
+                            <button>
+                                Conf
+                            </button>
+                            <button>
+                                SB
+                            </button>
+                            <button>
+                                Total
+                            </button>
+                        </div>
+                        <TableMain
+                            type={'secondary'}
+                            headers={secondary_headers}
+                            body={secondary_body}
+                        />
+                    </>
                 )
             }
         })
@@ -134,7 +154,7 @@ const Playoffs = () => {
 
     return isLoading ? 'Loading' : <>
 
-        <h1>{league.name}</h1>
+        <h1>{league.league?.name}</h1>
         <TableMain
             type={'main'}
             headers={summary_headers}
