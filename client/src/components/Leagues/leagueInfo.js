@@ -1,6 +1,7 @@
 import { useState } from "react";
 import TableMain from "../Home/tableMain";
 import { days, default_scoring_settings } from '../Functions/misc';
+import { Link } from 'react-router-dom';
 
 const LeagueInfo = ({
     stateAllPlayers,
@@ -207,7 +208,12 @@ const LeagueInfo = ({
     return <>
         <div className="secondary nav">
             <div>
-                <button>Standings</button>
+                <button>
+                    <Link to={`/playoffs/${league.league_id}`} target="_blank">
+                        Playoffs
+                    </Link>
+                </button>
+                <button className="active">Standings</button>
             </div>
             <div>
                 {

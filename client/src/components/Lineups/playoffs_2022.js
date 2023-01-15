@@ -11,18 +11,24 @@ const Playoffs = () => {
     const [scoring, setScoring] = useState({})
     const [itemActive, setItemActive] = useState('');
     const [allplayers, setAllPlayers] = useState({})
-    const [week, setWeek] = useState('WC')
+    const [stateWeek, setStateWeek] = useState(['WC'])
 
 
-    const getPlayerScore = (player_breakdown, scoring_settings) => {
-        console.log({
-            player_breakdown: player_breakdown
+    const getPlayerScore = (player_id) => {
+        const scoring_settings = league.league.scoring_settings
+
+        let total_points = 0;
+        stateWeek.map(w => {
+            const player_breakdown = scoring[w][player_id]
+            const points_week = Object.keys(player_breakdown || {})
+                .filter(x => Object.keys(scoring_settings).includes(x))
+                .reduce((acc, cur) => acc + player_breakdown[cur] * scoring_settings[cur], 0)
+
+            total_points += points_week
         })
-        const points = Object.keys(player_breakdown || {})
-            .filter(x => Object.keys(scoring_settings).includes(x))
-            .reduce((acc, cur) => acc + player_breakdown[cur] * scoring_settings[cur], 0)
 
-        return points.toFixed(2) || '1'
+
+        return total_points.toFixed(2) || '0.00'
     }
 
     useEffect(() => {
@@ -87,10 +93,10 @@ const Playoffs = () => {
     console.log(points)
 
     const summary_body = league.rosters
-        ?.sort((a, b) => b.players.reduce((acc, cur) => acc + parseFloat(getPlayerScore(scoring[week][cur], league.league.scoring_settings)), 0) - a.players.reduce((acc, cur) => acc + parseFloat(getPlayerScore(scoring[week][cur], league.league.scoring_settings)), 0))
+        ?.sort((a, b) => b.players.reduce((acc, cur) => acc + parseFloat(getPlayerScore(cur)), 0) - a.players.reduce((acc, cur) => acc + parseFloat(getPlayerScore(cur)), 0))
         ?.map(roster => {
             const secondary_body = roster.players
-                ?.sort((a, b) => parseFloat(getPlayerScore(scoring[week][b], league.league.scoring_settings)) - parseFloat(getPlayerScore(scoring[week][a], league.league.scoring_settings)))
+                ?.sort((a, b) => parseFloat(getPlayerScore(b)) - parseFloat(getPlayerScore(a)))
                 ?.map(player_id => {
                     return {
                         id: player_id,
@@ -100,7 +106,7 @@ const Playoffs = () => {
                                 colSpan: 5
                             },
                             {
-                                text: getPlayerScore(scoring[week][player_id], league.league.scoring_settings),
+                                text: getPlayerScore(player_id),
                                 colSpan: 2
                             }
                         ]
@@ -115,25 +121,14 @@ const Playoffs = () => {
                         colSpan: 5
                     },
                     {
-                        text: roster.players.reduce((acc, cur) => acc + parseFloat(getPlayerScore(scoring[week][cur], league.league.scoring_settings)), 0).toFixed(2) || '0.00',
+                        text: roster.players.reduce((acc, cur) => acc + parseFloat(getPlayerScore(cur)), 0).toFixed(2) || '0.00',
                         colSpan: 2
                     }
                 ],
                 secondary_table: (
                     <>
                         <div className="secondary nav">
-                            {
-                                Object.keys(scoring)
-                                    .sort((a, b) => scoring[a].index - scoring[b].index)
-                                    .map((key, index) =>
-                                        <button
-                                            className={week === key ? 'active click' : 'click'}
-                                            onClick={() => setWeek(key)}
-                                        >
-                                            {key.replace('_', ' ')}
-                                        </button>
-                                    )
-                            }
+                            <button className="active">Players Left:</button>
                         </div>
                         <TableMain
                             type={'secondary'}
@@ -149,6 +144,20 @@ const Playoffs = () => {
     return isLoading ? 'Loading' : <>
 
         <h1>{league.league?.name}</h1>
+        <div className="primary nav">
+            {
+                Object.keys(scoring)
+                    .sort((a, b) => scoring[a].index - scoring[b].index)
+                    .map((key, index) =>
+                        <button
+                            className={stateWeek.includes(key) ? 'active click' : 'click'}
+                            onClick={stateWeek.includes(key) ? () => setStateWeek(prevState => prevState.filter(x => x !== key)) : () => setStateWeek(prevState => [...prevState, key])}
+                        >
+                            {key.replace('_', ' ')}
+                        </button>
+                    )
+            }
+        </div>
         <TableMain
             type={'main'}
             headers={summary_headers}

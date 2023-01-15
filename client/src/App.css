@@ -27,6 +27,11 @@ div#root {
   margin: none;
 }
 
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
 h5 {
   position: absolute;
 }
