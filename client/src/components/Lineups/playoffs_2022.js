@@ -35,27 +35,32 @@ const Playoffs = () => {
         const fetchData = async () => {
             setIsLoading(true)
             const scores = await axios.get('/playoffscores')
-            const league = await axios.get(`https://api.sleeper.app/v1/league/${params.league_id}`)
-            const rosters = await axios.get(`https://api.sleeper.app/v1/league/${params.league_id}/rosters`)
-            const users = await axios.get(`https://api.sleeper.app/v1/league/${params.league_id}/users`)
-
-
             setScoring(scores.data.scoring)
             setAllPlayers(scores.data.allplayers)
 
-            setLeague({
-                league: league.data,
-                rosters: rosters.data,
-                users: users.data
+            const league_data = await axios.get('/playoffs/league', {
+                params: {
+                    league_id: params.league_id
+                }
             })
 
+            setLeague(league_data.data)
 
             setIsLoading(false)
         }
         fetchData()
+
+        const getScoringUpdates = setInterval(async () => {
+            const scores = await axios.get('/playoffscores')
+            setScoring(scores.data.scoring)
+        }, 60 * 1000)
+
+        return () => {
+            clearInterval(getScoringUpdates)
+        }
     }, [params.league_id])
 
-    console.log(scoring)
+
 
     const secondary_headers = [
         [
@@ -86,11 +91,10 @@ const Playoffs = () => {
     let points = {};
     Object.keys(scoring)
         .map(key => {
-            console.log(`key - ${key}`)
+
             points[key] = 5
         })
 
-    console.log(points)
 
     const summary_body = league.rosters
         ?.sort((a, b) => b.players.reduce((acc, cur) => acc + parseFloat(getPlayerScore(cur)), 0) - a.players.reduce((acc, cur) => acc + parseFloat(getPlayerScore(cur)), 0))
@@ -128,7 +132,15 @@ const Playoffs = () => {
                 secondary_table: (
                     <>
                         <div className="secondary nav">
-                            <button className="active">Players Left:</button>
+                            {
+                                Array.from(new Set(roster.players.map(player_id => allplayers[player_id]?.team)))
+                                    .sort((a, b) => roster.players.filter(player_id => allplayers[player_id]?.team === b).length - roster.players.filter(player_id => allplayers[player_id]?.team === a).length)
+                                    .map(team =>
+                                        <button className="active small">
+                                            {team}: {roster.players.filter(player_id => allplayers[player_id]?.team === team).length}
+                                        </button>
+                                    )
+                            }
                         </div>
                         <TableMain
                             type={'secondary'}
@@ -150,6 +162,7 @@ const Playoffs = () => {
                     .sort((a, b) => scoring[a].index - scoring[b].index)
                     .map((key, index) =>
                         <button
+                            key={key}
                             className={stateWeek.includes(key) ? 'active click' : 'click'}
                             onClick={stateWeek.includes(key) ? () => setStateWeek(prevState => prevState.filter(x => x !== key)) : () => setStateWeek(prevState => [...prevState, key])}
                         >

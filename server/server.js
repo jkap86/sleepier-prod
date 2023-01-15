@@ -28,6 +28,7 @@ const { getUser, updateUser, updateUser_Leagues } = require('./routes/user');
 const { trades_sync } = require('./syncs/trades_sync')
 const { getTrades } = require('./routes/trades')
 const { Playoffs_Scoring } = require('./syncs/playoffs_scoring')
+const { getPlayoffLeague } = require('./routes/league')
 
 const myCache = new NodeCache;
 
@@ -71,6 +72,18 @@ app.get('/playoffscores', async (req, res) => {
         scoring: playoffs,
         allplayers: allplayers
     })
+})
+
+app.get('/playoffs/league', async (req, res) => {
+    const league_cache = myCache.get(req.query.league_id)
+    if (league_cache) {
+        console.log('From Cache...')
+        res.send(league_cache)
+    } else {
+        const league = await getPlayoffLeague(axios, req.query.league_id)
+        myCache.set(req.query.league_id, league, 60 * 60)
+        res.send(league)
+    }
 })
 
 

@@ -27,6 +27,13 @@ div#root {
   margin: none;
 }
 
+div.nav>button.active.small {
+  font-size: 75%;
+  margin: 0;
+  border: .05rem solid var(--color1);
+
+}
+
 a {
   text-decoration: none;
   color: inherit;
