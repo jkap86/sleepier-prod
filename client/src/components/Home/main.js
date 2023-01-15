@@ -9,7 +9,7 @@ const Main = () => {
     const params = useParams();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
-    const [seasons_options, setSeasons_options] = useState([]);
+    const [seasons_options, setSeasons_options] = useState([params.season]);
     const [stateState, setStateState] = useState({})
     const [stateAllPlayers, setStateAllPlayers] = useState({});
     const [state_user, setState_User] = useState(false);
@@ -20,10 +20,8 @@ const Main = () => {
 
 
     useEffect(() => {
-
         const fetchData = async () => {
             setIsLoading(true)
-
             let user;
             try {
                 user = await axios.get('/user', {
@@ -35,8 +33,9 @@ const Main = () => {
             } catch (error) {
                 console.log(error)
             }
-
-            if (user.data?.leagues) {
+            if (!user.data?.user_id) {
+                setState_User(user.data)
+            } else {
                 let allplayers;
                 try {
                     allplayers = await axios.get('/allplayers', {
@@ -45,6 +44,7 @@ const Main = () => {
                 } catch (error) {
                     console.log(error)
                 }
+
                 setSeasons_options(user.data.seasons)
                 setStateState({
                     ...user.data.state,
@@ -58,25 +58,15 @@ const Main = () => {
                 })
 
                 const data = getLeagueData(user.data.leagues, user.data.user_id, stateState, params.season)
-                console.log({
-                    leagues: user.data.leagues,
-                    players: data.players,
-                    leaguemates: data.leaguemates,
-                    matchups: data.matchups,
-                    state: stateState
-                })
+
                 setStateLeagues(user.data.leagues)
                 setStatePlayerShares(data.players)
                 setStateLeaguemates(data.leaguemates)
                 setStateMatchups(data.matchups)
 
-            } else {
-                setState_User({
-                    error: user.data
-                })
             }
-            setIsLoading(false)
 
+            setIsLoading(false)
         }
         fetchData()
     }, [params.username, params.season])
@@ -84,25 +74,26 @@ const Main = () => {
 
     return <>
         {
-            isLoading ?
+            isLoading || !state_user ?
                 <div className="loading">
                     <h1 className="loading">
                         {isLoading && loadingIcon}
                     </h1>
                 </div>
-                :
-                state_user.error ||
-                <React.Suspense fallback={loadingIcon}>
-                    <View
-                        stateState={stateState}
-                        stateAllPlayers={stateAllPlayers}
-                        state_user={state_user}
-                        stateLeagues={stateLeagues}
-                        stateLeaguemates={stateLeaguemates}
-                        statePlayerShares={statePlayerShares}
-                        stateMatchups={stateMatchups}
-                    />
-                </React.Suspense>
+                : !state_user?.user_id ? state_user
+
+                    : <React.Suspense fallback={loadingIcon}>
+                        <View
+                            stateState={stateState}
+                            stateAllPlayers={stateAllPlayers}
+                            state_user={state_user}
+                            stateLeagues={stateLeagues}
+                            stateLeaguemates={stateLeaguemates}
+                            statePlayerShares={statePlayerShares}
+                            stateMatchups={stateMatchups}
+                        />
+                    </React.Suspense>
+
         }
     </>
 }

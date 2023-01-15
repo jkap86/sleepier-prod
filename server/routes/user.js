@@ -5,12 +5,17 @@ const getUser = async (axios, req) => {
     try {
         user = await axios.get(`http://api.sleeper.app/v1/user/${req.query.username}`)
     } catch (error) {
-        user = {
-            data: 'Usernmame Not Found'
-        }
         console.log(error)
     }
-    return user.data;
+    if (user.data) {
+        return {
+            avatar: user.data.avatar,
+            user_id: user.data.user_id,
+            username: user.data.display_name
+        };
+    } else {
+        return 'ERROR'
+    }
 }
 
 const updateUser = async (axios, app, req) => {
@@ -52,9 +57,6 @@ const updateUser = async (axios, app, req) => {
         league_ids = user_db[`${req.query.season}_leagues`] || []
     }
 
-    console.log({
-        LEAGUEIDS: league_ids
-    })
     return {
         user: user_db || new_user,
         league_ids: league_ids

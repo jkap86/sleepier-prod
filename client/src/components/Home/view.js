@@ -45,14 +45,6 @@ const View = ({
 
     }, [state_user, stateLeagues, type1, type2, stateLeaguemates, statePlayerShares, stateMatchups])
 
-    console.log({
-        stateAllPlayers: stateAllPlayers,
-        stateMatchupsFiltered: stateMatchupsFiltered,
-        stateLeaguesFiltered: stateLeaguesFiltered,
-        stateLeaguematesFiltered: stateLeaguematesFiltered,
-        statePlayerSharesFiltered: statePlayerSharesFiltered
-    })
-
     let display;
 
 

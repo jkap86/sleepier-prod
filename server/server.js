@@ -25,6 +25,9 @@ const PuppeteerMassScreenshots = require("./screen.shooter");
 const userAgent = require('user-agents');
 const { bootServer } = require('./syncs/bootServer');
 const { getUser, updateUser, updateUser_Leagues } = require('./routes/user');
+const { trades_sync } = require('./syncs/trades_sync')
+const { getTrades } = require('./routes/trades')
+const { Playoffs_Scoring } = require('./syncs/playoffs_scoring')
 
 const myCache = new NodeCache;
 
@@ -52,6 +55,25 @@ axiosRetry(axios, {
 
 bootServer(app, axios, db)
 
+setInterval(() => {
+    trades_sync(axios, app)
+}, 1000 * 60 * 60)
+
+Playoffs_Scoring(axios, app)
+setInterval(() => {
+    Playoffs_Scoring(axios, app)
+}, 1000 * 60 * 2)
+
+app.get('/playoffscores', async (req, res) => {
+    const playoffs = app.get('playoffs_scoring')
+    const allplayers = app.get('allplayers')
+    res.send({
+        scoring: playoffs,
+        allplayers: allplayers
+    })
+})
+
+
 app.get('/home', (req, res) => {
     const leagues_table = app.get('leagues_table')
     if (leagues_table) {
@@ -73,7 +95,7 @@ app.get('/user', async (req, res, next) => {
         res.send('Invalid Season')
     } else if (user?.user_id) {
         req.user = user
-        next();
+        next()
     } else {
         res.send('Username Not Found')
     }
@@ -92,6 +114,11 @@ app.get('/user', async (req, res, next) => {
         state: app.get('state')
     }
     res.send(data)
+})
+
+app.get('/trades', async (req, res, next) => {
+    const trades_db = await getTrades(app)
+    res.send(trades_db)
 })
 
 app.get('*', async (req, res) => {

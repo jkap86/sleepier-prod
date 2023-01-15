@@ -12,10 +12,10 @@ const bootServer = async (app, axios, db) => {
 
     let leagues_table = {};
     let trades_table = {};
-    let season = Math.max(parseInt(state.data.season), parseInt(state.data.league_create_season));
+    let season = Math.max(parseInt(state.data.league_season), parseInt(state.data.league_create_season));
     let seasons_options = []
 
-    while (season > 2018) {
+    while (season >= 2018) {
         leagues_table[season] = leagues(db, season)
         await leagues_table[season].sync({ alter: true })
 
