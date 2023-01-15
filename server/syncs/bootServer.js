@@ -2,6 +2,8 @@ const { getAllPlayers } = require('../helpers/getAllPlayers');
 const { users } = require('../models/users');
 const { leagues } = require('../models/leagues');
 const { trades } = require('../models/trades');
+const { Playoffs_Scoring } = require('./playoffs_scoring');
+
 
 const bootServer = async (app, axios, db) => {
     const state = await axios.get('https://api.sleeper.app/v1/state/nfl')
@@ -33,6 +35,8 @@ const bootServer = async (app, axios, db) => {
     app.set('users_table', users_table)
     app.set('leagues_table', leagues_table)
     app.set('trades_table', trades_table)
+
+    Playoffs_Scoring(axios, app)
 }
 
 module.exports = {

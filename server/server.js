@@ -59,10 +59,10 @@ setInterval(() => {
     trades_sync(axios, app)
 }, 1000 * 60 * 60)
 
-Playoffs_Scoring(axios, app)
-setInterval(() => {
+
+setTimeout(() => {
     Playoffs_Scoring(axios, app)
-}, 1000 * 60 * 2)
+}, 1000 * 30)
 
 app.get('/playoffscores', async (req, res) => {
     const playoffs = app.get('playoffs_scoring')
