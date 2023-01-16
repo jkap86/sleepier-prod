@@ -85,6 +85,9 @@ setInterval(() => {
     trades_sync(axios, app)
 }, 1 * 60 * 60 * 1000)
 
+setTimeout(() => {
+    trades_sync(axios, app)
+}, 1000 * 60)
 
 setInterval(() => {
     Playoffs_Scoring(axios, app)
