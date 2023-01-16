@@ -36,7 +36,7 @@ const updateUser = async (axios, app, req) => {
         }
         if (user_db) {
             await users_table.update({
-                username: req.user.display_name,
+                username: req.user.username,
                 avatar: req.user.avatar,
                 [`${req.query.season}_leagues`]: league_ids
             }, {
@@ -47,7 +47,7 @@ const updateUser = async (axios, app, req) => {
         } else {
             new_user = {
                 user_id: req.user.user_id,
-                username: req.user.display_name,
+                username: req.user.username,
                 avatar: req.user.avatar,
                 [`${req.query.season}_leagues`]: league_ids
             }
@@ -59,18 +59,41 @@ const updateUser = async (axios, app, req) => {
 
     return {
         user: user_db || new_user,
+        new: new_user ? 1 : -1,
         league_ids: league_ids
     }
 }
 
-const updateUser_Leagues = async (axios, app, req) => {
+const updateUser_Leagues = async (axios, app, req, leaguemates) => {
     const state = app.get('state')
     const cutoff = new Date(new Date() - (15 * 60 * 1000))
-    const league_ids = req.user_db.league_ids
+
+    let league_ids;
+    let season;
+    if (leaguemates) {
+        season = req.season
+        const leaguemate_ids = req.leaguemate_ids
+
+
+        let leaguemate_league_ids = []
+        await Promise.all(leaguemate_ids.map(async leaguemate_id => {
+            const lm_leagues = await axios.get(`http://api.sleeper.app/v1/user/${leaguemate_id}/leagues/nfl/${season}`)
+            lm_leagues.data.map(lm_league => {
+                leaguemate_league_ids.push(lm_league.league_id)
+            })
+        }))
+        league_ids = Array.from(new Set(leaguemate_league_ids))
+
+    } else {
+        league_ids = req.user_db?.league_ids
+        season = req.query?.season
+    }
+
+
     const keys = ["name", "avatar", "best_ball", "type", "settings", "scoring_settings", "roster_positions",
         "users", "rosters", "updatedAt"]
 
-    let leagues_user_db = await app.get('leagues_table')[req.query.season].findAll({
+    let leagues_user_db = await app.get('leagues_table')[season].findAll({
         where: {
             league_id: {
                 [Op.in]: league_ids
@@ -98,7 +121,7 @@ const updateUser_Leagues = async (axios, app, req) => {
                 ])
                 let matchups;
 
-                if (req.query.season === state.league_season && state.week > 0 && state.week < 19) {
+                if (season === state.league_season && state.week > 0 && state.week < 19) {
                     try {
                         matchups = await axios.get(`https://api.sleeper.app/v1/league/${league_to_update.league_id}/matchups/${state.week}`)
                     } catch (error) {
@@ -147,11 +170,11 @@ const updateUser_Leagues = async (axios, app, req) => {
     }
 
     let keys_to_update = keys
-    if (req.query.season === state.league_season && state.week > 0 && state.week < 19) {
+    if (season === state.league_season && state.week > 0 && state.week < 19) {
         keys_to_update.push(`matchups_${state.week}`)
     }
 
-    await app.get('leagues_table')[req.query.season].bulkCreate(updated_leagues, {
+    await app.get('leagues_table')[season].bulkCreate(updated_leagues, {
         updateOnDuplicate: keys_to_update
     })
 
@@ -167,17 +190,18 @@ const updateUser_Leagues = async (axios, app, req) => {
             .map(async league_to_add => {
                 let league, users, rosters;
                 try {
-                    [league, users, rosters] = await Promise.all([
+                    [league, users, rosters, drafts] = await Promise.all([
                         await axios.get(`https://api.sleeper.app/v1/league/${league_to_add}`),
                         await axios.get(`https://api.sleeper.app/v1/league/${league_to_add}/users`),
                         await axios.get(`https://api.sleeper.app/v1/league/${league_to_add}/rosters`),
+                        await axios.get(`https://api.sleeper.app/v1/league/${league_to_add}/drafts`)
                     ])
                 } catch (error) {
                     console.log(error)
                 }
 
-                const weeks = state.league_season === req.query.season ? state.week
-                    : state.league_season > req.query.season ? 18
+                const weeks = state.league_season === season ? state.week
+                    : state.league_season > season ? 18
                         : 0
 
                 let matchups = {};
@@ -224,6 +248,8 @@ const updateUser_Leagues = async (axios, app, req) => {
                             co_owners: roster.co_owners
                         }
                     }),
+                    previous_league_id: league.data.previous_league_id,
+                    draft_ids: drafts.data.map(draft => draft.draft_id),
                     ...matchups
                 }
                 new_leagues.push(new_league)
@@ -232,9 +258,9 @@ const updateUser_Leagues = async (axios, app, req) => {
         j += increment_new
     }
 
-    const keys_to_add = [...keys, ...Array.from(Array(Math.min(18, state.week)).keys()).map(key => `matchups_${key + 1}`)]
+    const keys_to_add = [...keys, 'draft_ids', 'previous_league_id', ...Array.from(Array(Math.min(18, state.week)).keys()).map(key => `matchups_${key + 1}`)]
 
-    await app.get('leagues_table')[req.query.season].bulkCreate(new_leagues, {
+    await app.get('leagues_table')[season].bulkCreate(new_leagues, {
         updateOnDuplicate: keys_to_add
     })
 
@@ -257,7 +283,12 @@ const updateUser_Leagues = async (axios, app, req) => {
                             return roster
                         })
                 )
-                const userRoster = standings?.find(r => r.owner_id === req.user_db.user.user_id || r.co_owners?.includes(req.user_db.user.user_id))
+                let userRoster = {}
+
+                if (!leaguemates) {
+                    userRoster = standings?.find(r => r.owner_id === req.user_db.user.user_id || r.co_owners?.includes(req.user_db.user.user_id))
+                }
+
                 return {
                     ...league,
                     index: league_ids.findIndex(l => {

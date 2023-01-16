@@ -77,12 +77,13 @@ const matchRankings = (player, position, stateAllPlayers) => {
 
 }
 
-export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershares, matchups) => {
+export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershares, matchups, trades) => {
 
     let filteredLeagues;
     let filteredLeaguemates;
     let filteredPlayerShares;
     let filteredMatchups;
+    let filteredTrades;
     switch (filter1) {
         case ('Redraft'):
             filteredLeagues = leagues.filter(x => x.type !== 2);
@@ -101,6 +102,7 @@ export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershar
                 }
             })
             filteredMatchups = matchups.filter(x => x.league.type !== 2)
+            filteredTrades = trades.filter(x => x.league.type !== 2)
             break;
         case ('All'):
             filteredLeagues = leagues;
@@ -119,6 +121,7 @@ export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershar
                 }
             })
             filteredMatchups = matchups
+            filteredTrades = trades
             break;
         case ('Dynasty'):
             filteredLeagues = leagues.filter(x => x.type === 2)
@@ -137,6 +140,7 @@ export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershar
                 }
             })
             filteredMatchups = matchups.filter(x => x.league.type === 2)
+            filteredTrades = trades.filter(x => x.league.type === 2)
             break;
         default:
             filteredLeagues = leagues;
@@ -155,12 +159,14 @@ export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershar
                 }
             })
             filteredMatchups = matchups;
+            filteredTrades = trades;
             break;
     }
     let filteredLeagues2 = filteredLeagues
     let filteredLeaguemates2 = filteredLeaguemates
     let filteredPlayerShares2 = filteredPlayerShares
     let filteredMatchups2 = filteredMatchups
+    let filteredTrades2 = filteredTrades
     switch (filter2) {
         case ('Bestball'):
             filteredLeagues2 = filteredLeagues.filter(x => x.best_ball === 1);
@@ -179,6 +185,7 @@ export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershar
                 }
             })
             filteredMatchups2 = filteredMatchups.filter(x => x.league.best_ball === 1)
+            filteredTrades2 = filteredTrades.filter(x => x.league.best_ball === 1)
             break;
         case ('All'):
             filteredLeagues2 = filteredLeagues;
@@ -197,6 +204,7 @@ export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershar
                 }
             })
             filteredMatchups2 = filteredMatchups
+            filteredTrades2 = filteredTrades
             break;
         case ('Standard'):
             filteredLeagues2 = filteredLeagues.filter(x => x.best_ball !== 1);
@@ -215,6 +223,7 @@ export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershar
                 }
             })
             filteredMatchups2 = filteredMatchups.filter(x => x.league.best_ball !== 1)
+            filteredTrades2 = filteredTrades.filter(x => x.league.best_ball !== 1)
             break;
         default:
             filteredLeagues2 = filteredLeagues;
@@ -233,6 +242,7 @@ export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershar
                 }
             })
             filteredMatchups2 = filteredMatchups
+            filteredTrades2 = filteredTrades
             break;
     }
 
@@ -240,7 +250,8 @@ export const filterLeagues = (leagues, filter1, filter2, leaguemates, playershar
         leagues: filteredLeagues2,
         leaguemates: filteredLeaguemates2,
         playershares: filteredPlayerShares2,
-        matchups: filteredMatchups2
+        matchups: filteredMatchups2,
+        trades: filteredTrades2
     }
 
 }

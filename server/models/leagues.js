@@ -34,6 +34,12 @@ const leagues = (db, season) => {
         rosters: {
             type: Sequelize.JSONB
         },
+        previous_league_id: {
+            type: Sequelize.STRING
+        },
+        draft_ids: {
+            type: Sequelize.JSONB
+        },
         ...Object.fromEntries(Array.from(Array(18).keys()).map(key => {
             return [`matchups_${key + 1}`, { type: Sequelize.JSONB }]
         }))

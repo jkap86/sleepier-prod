@@ -13,7 +13,7 @@ const trades_sync = async (axios, app) => {
 
     let transactions_week = []
     let i = 0
-    const increment = 100
+    const increment = 50
 
     while (i <= leagues_to_update.length) {
         await Promise.all(leagues_to_update
@@ -53,7 +53,9 @@ const trades_sync = async (axios, app) => {
                                     name: league.name,
                                     avatar: league.avatar,
                                     rosters: league.rosters,
-                                    users: league.users
+                                    users: league.users,
+                                    best_ball: league.settings.best_ball,
+                                    type: league.settings.type
                                 }
                             })
                         }

@@ -2,10 +2,11 @@
 
 
 
-const getTrades = async (app) => {
+const getTrades = async (app, user_id) => {
     const state = app.get('state')
     const trades_table = app.get('trades_table')
-    const trades = await trades_table[state.league_season].findAll()
+    let trades = await trades_table[state.league_season].findAll()
+
 
     return trades
 }

@@ -620,7 +620,7 @@ div.nav {
   color: var(--color2);
   display: flex;
   justify-content: space-evenly;
-  flex-wrap: wrap;
+
   margin: auto;
   position: relative;
 }

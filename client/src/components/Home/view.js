@@ -7,6 +7,7 @@ import Leagues from '../Leagues/leagues';
 import Lineups from '../Lineups/lineups';
 import Players from '../Players/players';
 import Leaguemates from '../Leaguemates/leaguemates';
+import Trades from "../Trades/trades";
 
 const View = ({
     stateState,
@@ -15,7 +16,8 @@ const View = ({
     stateLeagues,
     stateLeaguemates,
     statePlayerShares,
-    stateMatchups
+    stateMatchups,
+    stateTrades
 }) => {
     const params = useParams();
     const navigate = useNavigate();
@@ -23,6 +25,7 @@ const View = ({
     const [statePlayerSharesFiltered, setStatePlayerSharesFiltered] = useState([]);
     const [stateLeaguematesFiltered, setStateLeaguematesFiltered] = useState([]);
     const [stateMatchupsFiltered, setStateMatchupsFiltered] = useState([]);
+    const [stateTradesFiltered, setStateTradesFiltered] = useState([])
     const [tab, setTab] = useState('Summary');
     const [type1, setType1] = useState('All');
     const [type2, setType2] = useState('All');
@@ -30,7 +33,7 @@ const View = ({
     const [week, setWeek] = useState(0);
 
     useEffect(() => {
-        const filtered_data = filterLeagues(stateLeagues, type1, type2, stateLeaguemates, statePlayerShares, stateMatchups)
+        const filtered_data = filterLeagues(stateLeagues, type1, type2, stateLeaguemates, statePlayerShares, stateMatchups, stateTrades)
 
         const week = params.season === stateState.league_season ?
             Math.min(stateState.week, 18) : params.season > stateState.league_season ?
@@ -41,9 +44,9 @@ const View = ({
         setStatePlayerSharesFiltered([...filtered_data.playershares])
         setStateLeaguematesFiltered([...filtered_data.leaguemates])
         setStateMatchupsFiltered([...filtered_data.matchups])
+        setStateTradesFiltered([...filtered_data.trades])
 
-
-    }, [state_user, stateLeagues, type1, type2, stateLeaguemates, statePlayerShares, stateMatchups])
+    }, [state_user, stateLeagues, type1, type2, stateLeaguemates, statePlayerShares, stateMatchups, stateTrades])
 
     let display;
 
@@ -82,6 +85,13 @@ const View = ({
                 stateAllPlayers={stateAllPlayers}
                 state_user={state_user}
                 stateLeaguemates={stateLeaguematesFiltered}
+            />
+            break;
+        case 'Trades':
+            display = <Trades
+                stateTrades={stateTradesFiltered}
+                stateAllPlayers={stateAllPlayers}
+                state_user={state_user}
             />
             break;
         default:

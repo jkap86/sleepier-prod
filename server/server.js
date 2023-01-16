@@ -29,6 +29,7 @@ const { trades_sync } = require('./syncs/trades_sync')
 const { getTrades } = require('./routes/trades')
 const { Playoffs_Scoring } = require('./syncs/playoffs_scoring')
 const { getPlayoffLeague } = require('./routes/league')
+const { dailySync } = require('./syncs/daily_sync')
 
 const myCache = new NodeCache;
 
@@ -39,7 +40,7 @@ app.use(express.static(path.resolve(__dirname, '../client/build')));
 
 const connectionString = process.env.DATABASE_URL || 'postgres://dev:password123@localhost:5432/dev'
 const ssl = process.env.HEROKU ? { rejectUnauthorized: false } : false
-const db = new Sequelize(connectionString, { logging: false, dialect: 'postgres', dialectOptions: { ssl: ssl, useUTC: false } })
+const db = new Sequelize(connectionString, { pool: { max: 5, min: 0, acquire: 30000, idle: 1000 }, logging: false, dialect: 'postgres', dialectOptions: { ssl: ssl, useUTC: false } })
 
 
 axiosRetry(axios, {
@@ -55,15 +56,54 @@ axiosRetry(axios, {
 })
 
 bootServer(app, axios, db)
+const date = new Date()
+const tzOffset = date.getTimezoneOffset()
+const tzOffset_ms = tzOffset * 60 * 1000
+const date_tz = new Date(date + tzOffset_ms)
+
+const hour = date_tz.getHours()
+const minute = date_tz.getMinutes()
+
+let delay;
+if (hour < 3) {
+    delay = (((3 - hour) * 60) + (60 - minute)) * 60 * 1000
+} else {
+    delay = (((27 - hour) * 60) + (60 - minute)) * 60 * 1000
+}
+
+setTimeout(async () => {
+    setInterval(async () => {
+        dailySync(app, axios)
+        console.log(`Daily Sync completed at ${new Date()}`)
+    }, 24 * 60 * 60 * 1 * 1000)
+
+}, delay)
+console.log(`Daily Sync in ${Math.floor(delay / (60 * 60 * 1000))} hours`)
+
 
 setInterval(() => {
     trades_sync(axios, app)
-}, 1000 * 60 * 60)
+}, 1 * 60 * 60 * 1000)
 
 
 setInterval(() => {
     Playoffs_Scoring(axios, app)
 }, 1000 * 60)
+
+
+setInterval(async () => {
+    const new_users = app.get('new_users')
+
+    Object.keys(new_users).map(async season => {
+        if (new_users[season].length >= 1) {
+
+            await updateUser_Leagues(axios, app, { season: season, leaguemate_ids: new_users[season] }, true)
+        }
+    })
+
+    app.set('new_users', [])
+}, 1000 * 15)
+
 
 app.get('/playoffscores', async (req, res) => {
     const playoffs = app.get('playoffs_scoring')
@@ -118,19 +158,49 @@ app.get('/user', async (req, res, next) => {
     next();
 }, async (req, res, next) => {
     const leagues_db = await updateUser_Leagues(axios, app, req)
+
+    const leaguemate_ids = Array.from(new Set(leagues_db.map(league => {
+        return league.users.map(user => {
+            return user.user_id
+        })
+    }).flat()))
+
     const data = {
         user_id: req.user_db.user.user_id,
         username: req.user_db.user.username,
         avatar: req.user_db.user.avatar,
         seasons: Object.keys(app.get('leagues_table')),
         leagues: leagues_db,
-        state: app.get('state')
+        state: app.get('state'),
+        leaguemate_ids: leaguemate_ids
+    }
+
+    if (req.user_db.new === 1) {
+        console.log('adding to new users')
+        let new_users = app.get('new_users')
+
+        let new_users_season = new_users[req.query.season]
+
+
+        if (new_users_season) {
+            new_users_season = Array.from(new Set([...new_users_season, leaguemate_ids]))
+        } else {
+            new_users_season = leaguemate_ids
+        }
+
+        const updated_new_users = {
+            ...new_users,
+            [req.query.season]: new_users_season
+        }
+
+        console.log(updated_new_users)
+        app.set('new_users', updated_new_users)
     }
     res.send(data)
 })
 
 app.get('/trades', async (req, res, next) => {
-    const trades_db = await getTrades(app)
+    const trades_db = await getTrades(app, req.query.user_id)
     res.send(trades_db)
 })
 

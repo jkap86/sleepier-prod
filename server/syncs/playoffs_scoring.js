@@ -1,6 +1,16 @@
 
 
 const Playoffs_Scoring = async (axios, app) => {
+    const schedule = app.get('schedule')
+
+    const games_in_progress = schedule.nflSchedule.matchup.filter(m => m.gameSecondsRemaining !== "0" && m.gameSecondsRemaining !== "3600")
+    if (games_in_progress.length === 0) {
+        console.log('No Games in Progress..')
+        return
+    }
+
+    console.log(`${games_in_progress.length} Games in Progress...`)
+
     const state = app.get('state')
 
     const rounds = ['Week_18', 'WC', 'DIV', 'CONF', 'SB']

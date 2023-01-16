@@ -17,6 +17,7 @@ const Main = () => {
     const [stateLeaguemates, setStateLeaguemates] = useState([]);
     const [statePlayerShares, setStatePlayerShares] = useState([]);
     const [stateMatchups, setStateMatchups] = useState([]);
+    const [stateTrades, setStateTrades] = useState([]);
 
 
     useEffect(() => {
@@ -36,21 +37,30 @@ const Main = () => {
             if (!user.data?.user_id) {
                 setState_User(user.data)
             } else {
-                let allplayers;
-                try {
-                    allplayers = await axios.get('/allplayers', {
-                        timeout: 5000
-                    })
-                } catch (error) {
-                    console.log(error)
-                }
-
                 setSeasons_options(user.data.seasons)
                 setStateState({
                     ...user.data.state,
                     seasons: user.data.seasons
                 })
+
+                let allplayers;
+                let trades;
+                try {
+                    [allplayers, trades] = await Promise.all([
+                        await axios.get('/allplayers'),
+                        await axios.get('/trades', {
+                            params: {
+                                user_id: user.data.user_id
+                            }
+                        })
+                    ])
+                } catch (error) {
+                    console.log(error)
+                }
+
+
                 setStateAllPlayers(allplayers.data)
+
                 setState_User({
                     username: user.data.username,
                     user_id: user.data.user_id,
@@ -63,6 +73,18 @@ const Main = () => {
                 setStatePlayerShares(data.players)
                 setStateLeaguemates(data.leaguemates)
                 setStateMatchups(data.matchups)
+
+                const leaguemate_trades = trades.data.filter(trade => {
+                    let isLeaguemate = false;
+                    trade.managers.map(manager => {
+                        if (user.data.leaguemate_ids.includes(manager?.user_id)) {
+                            isLeaguemate = true
+                        }
+                    })
+                    return isLeaguemate
+                })
+
+                setStateTrades(leaguemate_trades)
 
             }
 
@@ -91,6 +113,7 @@ const Main = () => {
                             stateLeaguemates={stateLeaguemates}
                             statePlayerShares={statePlayerShares}
                             stateMatchups={stateMatchups}
+                            stateTrades={stateTrades}
                         />
                     </React.Suspense>
 
