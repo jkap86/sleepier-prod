@@ -61,9 +61,9 @@ setInterval(() => {
 }, 1000 * 60 * 60)
 
 
-setTimeout(() => {
+setInterval(() => {
     Playoffs_Scoring(axios, app)
-}, 1000 * 30)
+}, 1000 * 60)
 
 app.get('/playoffscores', async (req, res) => {
     const playoffs = app.get('playoffs_scoring')

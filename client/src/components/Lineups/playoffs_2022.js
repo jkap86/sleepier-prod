@@ -10,6 +10,7 @@ const Playoffs = () => {
     const [league, setLeague] = useState({})
     const [scoring, setScoring] = useState({})
     const [itemActive, setItemActive] = useState('');
+    const [playerActive, setPlayerActive] = useState('')
     const [allplayers, setAllPlayers] = useState({})
     const [stateWeek, setStateWeek] = useState(['WC'])
 
@@ -26,9 +27,24 @@ const Playoffs = () => {
 
             total_points += points_week
         })
-
-
         return total_points.toFixed(2) || '0.00'
+    }
+
+    const getPlayerBreakdown = (player_id) => {
+        const scoring_settings = league.league.scoring_settings
+
+        let breakdown = {}
+        stateWeek.map(w => {
+            const player_breakdown = scoring[w][player_id]
+            Object.keys(player_breakdown || {})
+                .filter(x => Object.keys(scoring_settings).includes(x))
+                .map(key => {
+                    return breakdown[key] = Object.keys(breakdown).includes(key) ? breakdown[key] + (player_breakdown[key] * scoring_settings[key]) : (player_breakdown[key] * scoring_settings[key])
+                })
+
+
+        })
+        return breakdown
     }
 
     useEffect(() => {
@@ -60,7 +76,18 @@ const Playoffs = () => {
         }
     }, [params.league_id])
 
-
+    const tertiary_headers = [
+        [
+            {
+                text: 'Category',
+                colSpan: 5
+            },
+            {
+                text: 'Points',
+                colSpan: 2
+            }
+        ]
+    ]
 
     const secondary_headers = [
         [
@@ -102,6 +129,24 @@ const Playoffs = () => {
             const secondary_body = roster.players
                 ?.sort((a, b) => parseFloat(getPlayerScore(b)) - parseFloat(getPlayerScore(a)))
                 ?.map(player_id => {
+                    const breakdown = getPlayerBreakdown(player_id) || {}
+                    const tertiary_body = Object.keys(breakdown || {})
+                        ?.map(key => {
+                            return {
+                                id: key,
+                                list: [
+                                    {
+                                        text: key,
+                                        colSpan: 5
+                                    },
+                                    {
+                                        text: breakdown[key].toFixed(2),
+                                        colSpan: 2
+                                    }
+                                ]
+                            }
+                        })
+                    console.log(tertiary_body)
                     return {
                         id: player_id,
                         list: [
@@ -113,7 +158,14 @@ const Playoffs = () => {
                                 text: getPlayerScore(player_id),
                                 colSpan: 2
                             }
-                        ]
+                        ],
+                        secondary_table: (
+                            <TableMain
+                                type={'tertiary'}
+                                headers={tertiary_headers}
+                                body={tertiary_body}
+                            />
+                        )
                     }
                 })
 
@@ -146,6 +198,8 @@ const Playoffs = () => {
                             type={'secondary'}
                             headers={secondary_headers}
                             body={secondary_body}
+                            itemActive={playerActive}
+                            setItemActive={setPlayerActive}
                         />
                     </>
                 )
