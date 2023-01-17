@@ -8,7 +8,7 @@ const Playoffs_Scoring = async (axios, app) => {
         console.log('No Games in Progress..')
         return
     }
-
+    app.set('syncing', 'TRUE')
     console.log(`${games_in_progress.length} Games in Progress...`)
 
     const state = app.get('state')
@@ -42,7 +42,7 @@ const Playoffs_Scoring = async (axios, app) => {
         }))
 
     app.set('playoffs_scoring', player_scores)
-
+    app.set('syncing', 'FALSE')
     return player_scores
 }
 

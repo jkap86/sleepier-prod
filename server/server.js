@@ -30,6 +30,7 @@ const { getTrades } = require('./routes/trades')
 const { Playoffs_Scoring } = require('./syncs/playoffs_scoring')
 const { getPlayoffLeague } = require('./routes/league')
 const { dailySync } = require('./syncs/daily_sync')
+const { updateNewUsers } = require('./syncs/new_users')
 
 const myCache = new NodeCache;
 
@@ -80,31 +81,34 @@ setTimeout(async () => {
 }, delay)
 console.log(`Daily Sync in ${Math.floor(delay / (60 * 60 * 1000))} hours`)
 
+setInterval(() => {
+    let syncing = app.get('syncing')
+
+    while (syncing === 'TRUE') {
+        setTimeout(() => {
+            syncing = app.get('syncing')
+        }, 15 * 1000)
+    }
+    trades_sync(axios, app)
+
+}, [60 * 1000])
 
 setInterval(() => {
-    trades_sync(axios, app)
-}, 1 * 60 * 60 * 1000)
 
-setTimeout(() => {
-    trades_sync(axios, app)
-}, 1000 * 60)
+    let syncing = app.get('syncing')
+    console.log(`Syncing: ${syncing}`)
 
-setInterval(() => {
-    Playoffs_Scoring(axios, app)
-}, 1000 * 60)
+    const sync = async () => {
+        const now = new Date();
+        const minutes = now.getMinutes()
+        await Playoffs_Scoring(axios, app)
+        await updateNewUsers(axios, app)
+    }
+    if (syncing !== 'TRUE') {
+        sync()
+    }
 
 
-setInterval(async () => {
-    const new_users = app.get('new_users')
-
-    Object.keys(new_users).map(async season => {
-        if (new_users[season].length >= 1) {
-
-            await updateUser_Leagues(axios, app, { season: season, leaguemate_ids: new_users[season] }, true)
-        }
-    })
-
-    app.set('new_users', [])
 }, 1000 * 15)
 
 
@@ -202,7 +206,6 @@ app.get('/user', async (req, res, next) => {
             [req.query.season]: new_users_season
         }
 
-        console.log(updated_new_users)
         app.set('new_users', updated_new_users)
     }
     res.send(data)

@@ -2,6 +2,7 @@
 
 
 const trades_sync = async (axios, app) => {
+    app.set('syncing', 'TRUE')
     console.log(`Begin transactions sync at ${new Date()}`)
 
     const leagues_table = app.get('leagues_table')
@@ -71,6 +72,7 @@ const trades_sync = async (axios, app) => {
     }
 
     console.log(`Transactions sync completed at ${new Date()}`)
+    app.set('syncing', 'FALSE')
 }
 
 
