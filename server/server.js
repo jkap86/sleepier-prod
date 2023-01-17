@@ -46,7 +46,8 @@ const db = new Sequelize(connectionString, { pool: { max: 5, min: 0, acquire: 30
 axiosRetry(axios, {
     retries: 3,
     retryCondition: (error) => {
-        return axiosRetry.isNetworkError(error) || axiosRetry.isRetryableError(error);
+        return error.code === 'ECONNABORTED' ||
+            axiosRetry.isNetworkError(error) || axiosRetry.isRetryableError(error);
     },
     retryDelay: (retryCount) => {
         return retryCount * 3000
