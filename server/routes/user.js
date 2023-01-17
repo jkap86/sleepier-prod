@@ -108,7 +108,7 @@ const updateUser_Leagues = async (axios, app, req, leaguemates) => {
 
     let updated_leagues = []
     let i = 0;
-    const increment = 100;
+    const increment = 25;
 
     while (i <= leagues_to_update?.length) {
         await Promise.all(leagues_to_update

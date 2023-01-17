@@ -46,8 +46,7 @@ const db = new Sequelize(connectionString, { pool: { max: 5, min: 0, acquire: 30
 axiosRetry(axios, {
     retries: 3,
     retryCondition: (error) => {
-        return error.code !== 'ECONNABORTED' ||
-            axiosRetry.isNetworkError(error) || axiosRetry.isRetryableError(error);
+        return axiosRetry.isNetworkError(error) || axiosRetry.isRetryableError(error);
     },
     retryDelay: (retryCount) => {
         return retryCount * 3000
@@ -147,6 +146,12 @@ app.get('/allplayers', (req, res) => {
 
 app.get('/user', async (req, res, next) => {
     const user = await getUser(axios, req)
+
+    let leagues_table = app.get('leagues_table')
+    while (!leagues_table) {
+        leagues_table = app.get('leagues_table')
+    }
+
     if (!Object.keys(app.get('leagues_table')).includes(req.query.season)) {
         res.send('Invalid Season')
     } else if (user?.user_id) {
